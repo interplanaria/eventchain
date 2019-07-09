@@ -2,8 +2,6 @@
 
 > A general purpose append-only log for capturing filtered Bitcoin events
 
-![echain](https://e.planaria.network/echain.png)
-
 If [Planaria](https://neon.planaria.network) is an event-driven application backend framework, Eventchain is a general purpose event log which filters and stores the events themselves in a file and leaves the rest to you: the developer.
 
 ![img](https://e.planaria.network/stack.png)
