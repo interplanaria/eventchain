@@ -1,0 +1,15 @@
+{
+  "name": "echain",
+  "version": "0.0.12",
+  "description": "",
+  "main": "index.js",
+  "author": "unwriter@protonmail.com",
+  "license": "Open BSV",
+  "bin": {
+    "echain": "./index.js"
+  },
+  "dependencies": {
+    "glob": "^7.1.4",
+    "neonplanaria": "0.0.22"
+  }
+}
