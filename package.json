@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "glob": "^7.1.4",
+    "minimist": "^1.2.0",
     "neonplanaria": "0.0.39"
   }
 }

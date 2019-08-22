@@ -1,9 +1,11 @@
 #!/usr/bin/env node
+const async = require('async')
 const glob = require('glob')
 const { planaria } = require("neonplanaria")
 const fs = require('fs');
 const path = require('path');
 const stream = require('stream')
+const minimist = require('minimist')
 
 // Implement log stream - must define _read() callback or errs
 const log = new stream.Readable()
@@ -36,28 +38,50 @@ const validate = function(config, vmode) {
 }
 
 const start = function(options) {
-  glob(process.cwd() + "/*.json", async function(er, files) {
-    let configs = files.map(function(f) {
-      return require(f)
-    }).filter(function(f) {
-      return f.eventchain
-    })
-    if (configs.length === 0) {
-      console.log("EVENTCHAIN", "Couldn't find a JSON file with an 'eventchain' attribute")
-      process.exit();
-      return;
+  async.waterfall([
+    // Load or parse config file(s)
+    async function(callback) {
+      if (options.configjson) {
+        console.log("EVENTCHAIN", "Using JSON config")
+        let config = JSON.parse(options.configjson)
+        callback(null, [config])
+      } else if (options.config) {
+        console.log("EVENTCHAIN", "Loading config:", options.config)
+        let config = require(path.resolve(options.config))
+        callback(null, [config])
+      } else {
+        console.log("EVENTCHAIN", "Searching for config file")
+        glob(process.cwd() + "/*.json", async function(err, files) {
+          let configs = files.map(function(f) {
+            return require(f)
+          }).filter(function(f) {
+            return f.eventchain
+          })
+          callback(err, configs)
+        })
+      }
+    },
+    // Validate config file(s)
+    function(configs, callback) {
+      if (configs.length === 0) {
+        console.log("EVENTCHAIN", "Couldn't find a JSON file with an 'eventchain' attribute")
+        process.exit();
+        return;
+      }
+      if (configs.length > 1) {
+        console.log("EVENTCHAIN", "Only one config JSON supported per Eventchain.")
+        process.exit();
+        return;
+      }
+      let config = configs[0];
+      let v = validate(config)
+      if (v.length > 0) {
+        console.log(v.join("\n"))
+        process.exit();
+      }
+      callback(null, config)
     }
-    if (configs.length > 1) {
-      console.log("EVENTCHAIN", "Only one config JSON supported per Eventchain.")
-      process.exit();
-      return;
-    }
-    let config = configs[0];
-    let v = validate(config)
-    if (v.length > 0) {
-      console.log(v.join("\n"))
-      process.exit();
-    }
+  ], function(error, config) {
     planaria.start({
       filter: config,
       onmempool: async function(e) {
@@ -85,8 +109,17 @@ const start = function(options) {
 }
 
 if (process.argv.length > 2) {
-  let cmd = process.argv[2].toLowerCase();
-  let opts = {}
+  const cmd = process.argv[2].toLowerCase();
+  const opts = minimist(process.argv.slice(3), {
+    alias: {
+      config: 'c',
+      configjson: 'j',
+      mode: 'm'
+    },
+    default: {
+      mode: 'file'
+    }
+  });
   if (cmd === 'rewind') {
   } else if (cmd === 'start') {
     start(opts)
