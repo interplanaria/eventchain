@@ -10,6 +10,6 @@
   },
   "dependencies": {
     "glob": "^7.1.4",
-    "neonplanaria": "0.0.22"
+    "neonplanaria": "0.0.39"
   }
 }

@@ -3,14 +3,12 @@ const glob = require('glob')
 const { planaria } = require("neonplanaria")
 const fs = require('fs');
 const path = require('path');
-const chaindir = process.cwd() + "/eventchain"
-const log = function(msg) {
-  return new Promise(function(resolve, reject) {
-    fs.appendFile(chaindir + "/chain.txt", msg, function(err) {
-      resolve();
-    })
-  })
-}
+const stream = require('stream')
+
+// Implement log stream - must define _read() callback or errs
+const log = new stream.Readable()
+log._read = function() {}
+
 const validate = function(config, vmode) {
   let errors = [];
   if (!config.eventchain && vmode !== "build") {
@@ -36,7 +34,8 @@ const validate = function(config, vmode) {
   }
   return errors;
 }
-const start = function() {
+
+const start = function(options) {
   glob(process.cwd() + "/*.json", async function(er, files) {
     let configs = files.map(function(f) {
       return require(f)
@@ -62,32 +61,37 @@ const start = function() {
     planaria.start({
       filter: config,
       onmempool: async function(e) {
-        await log("ONMEMPOOL " + Date.now() + " " + e.tx.tx.h + " " + JSON.stringify(e.tx) + "\n")
+        log.push("ONMEMPOOL " + Date.now() + " " + e.tx.tx.h + " " + JSON.stringify(e.tx) + "\n")
       },
       onblock: async function(e) {
         if (e.tx.length > 0) {
-          await log("ONBLOCK " + Date.now() + " " + e.tx[0].blk.h + " " + JSON.stringify(e.tx) + "\n")
+          log.push("ONBLOCK " + Date.now() + " " + e.tx[0].blk.h + " " + JSON.stringify(e.tx) + "\n")
         }
       },
-      onstart: function(e) {
-        return new Promise(function(resolve, reject) {
-          if (fs.existsSync(chaindir)) {
-            resolve()
-          } else {
-            fs.mkdir(chaindir, function(err) {
-              resolve()
-            })
+      onstart: async function(e) {
+        if (options.mode === 'pipe') {
+          log.pipe(process.stdout)
+        } else {
+          const chaindir = process.cwd() + "/eventchain"
+          if (!fs.existsSync(chaindir)) {
+            fs.mkdirSync(chaindir)
           }
-        })
+          const logfile = fs.createWriteStream(chaindir + "/chain.txt", { flags: 'a+' })
+          log.pipe(logfile)
+        }
       },
     })
   })
 }
+
 if (process.argv.length > 2) {
   let cmd = process.argv[2].toLowerCase();
+  let opts = {}
   if (cmd === 'rewind') {
   } else if (cmd === 'start') {
-    start();
+    start(opts)
+  } else if (cmd === 'pipe') {
+    start({...opts, mode: 'pipe'})
   } else if (cmd === 'serve') {
   } else if (cmd === 'whoami') {
   } else if (cmd === 'ls') {
