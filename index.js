@@ -101,6 +101,7 @@ const start = async function(options) {
         const logfile = fs.createWriteStream(chaindir + "/chain.txt", { flags: 'a+' })
         log.pipe(logfile)
       }
+      log.push("ONSTART " + Date.now() + " " + JSON.stringify(e) + "\n")
     },
   })
 }
