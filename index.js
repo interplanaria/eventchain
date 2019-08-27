@@ -48,7 +48,7 @@ const loadAndValidateConfig = async function(options) {
       resolve([config])
     } else {
       console.log("EVENTCHAIN", "Searching for config file")
-      glob(process.cwd() + "/*.json", async function(err, files) {
+      glob(process.cwd() +  "/*.@(js|json)", async function(er, files) {
         if (err) reject(err);
         let configs = files.map(function(f) {
           return require(f)
