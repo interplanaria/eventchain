@@ -5,6 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const stream = require('stream')
 const minimist = require('minimist')
+const requireStr = require('require-from-string');
 
 // Implement log stream - must define _read() callback or errs
 const log = new stream.Readable()
@@ -38,9 +39,15 @@ const validate = function(config, vmode) {
 
 const loadAndValidateConfig = async function(options) {
   const configs = await new Promise(function(resolve, reject) {
-    if (options.jsonconfig) {
-      console.log("EVENTCHAIN", "Using JSON config")
-      let config = JSON.parse(options.jsonconfig)
+    if (options.strconfig) {
+      let config;
+      if (options.strconfig.startsWith("module.exports")) {
+        console.log("EVENTCHAIN", "Using JavaScript config")
+        config = requireStr(options.strconfig) 
+      } else {
+        console.log("EVENTCHAIN", "Using JSON config")
+        config = JSON.parse(options.strconfig)
+      }
       resolve([config])
     } else if (options.config) {
       console.log("EVENTCHAIN", "Loading config:", options.config)
@@ -104,7 +111,7 @@ const start = async function(options) {
       log.push("ONSTART " + Date.now() + " " + JSON.stringify(e) + "\n")
     },
   };
-  if (options && options.tape) gene.tape = options.tape;
+  if (options && options.dest) gene.tape = options.dest;
   if (gene.tape) {
     chaindir = path.resolve(process.cwd(), gene.tape, "eventchain")
   } else {
@@ -117,10 +124,10 @@ if (require.main === module && process.argv.length > 2) {
   const cmd = process.argv[2].toLowerCase();
   const opts = minimist(process.argv.slice(3), {
     alias: {
-      config: 'c',
-      jsonconfig: 'j',
+      fileconfig: 'f',
+      strconfig: 's',
       pipe: 'p',
-      tape: 't',
+      dest: 'd',
     },
     boolean: ['pipe']
   });
