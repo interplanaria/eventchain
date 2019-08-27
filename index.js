@@ -80,7 +80,8 @@ const loadAndValidateConfig = async function(options) {
 
 const start = async function(options) {
   const config = await loadAndValidateConfig(options)
-  planaria.start({
+  let chaindir;
+  let gene = {
     filter: config,
     onmempool: async function(e) {
       log.push("ONMEMPOOL " + Date.now() + " " + e.tx.tx.h + " " + JSON.stringify(e.tx) + "\n")
@@ -94,7 +95,6 @@ const start = async function(options) {
       if (options.pipe) {
         log.pipe(process.stdout)
       } else {
-        const chaindir = process.cwd() + "/eventchain"
         if (!fs.existsSync(chaindir)) {
           fs.mkdirSync(chaindir)
         }
@@ -104,6 +104,13 @@ const start = async function(options) {
       log.push("ONSTART " + Date.now() + " " + JSON.stringify(e) + "\n")
     },
   })
+  if (options && options.tape) gene.tape = o.tape;
+  if (gene.tape) {
+    chaindir = path.resolve(process.cwd(), gene.tape, "eventchain")
+  } else {
+    chaindir = path.resolve(process.cwd(), "eventchain")
+  }
+  planaria.start(gene)
 }
 
 if (process.argv.length > 2) {
@@ -112,7 +119,8 @@ if (process.argv.length > 2) {
     alias: {
       config: 'c',
       jsonconfig: 'j',
-      pipe: 'p'
+      pipe: 'p',
+      tape: 't',
     },
     boolean: ['pipe']
   });
