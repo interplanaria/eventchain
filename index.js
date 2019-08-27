@@ -113,7 +113,7 @@ const start = async function(options) {
   planaria.start(gene)
 }
 
-if (process.argv.length > 2) {
+if (require.main === module && process.argv.length > 2) {
   const cmd = process.argv[2].toLowerCase();
   const opts = minimist(process.argv.slice(3), {
     alias: {
