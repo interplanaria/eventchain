@@ -48,7 +48,7 @@ const loadAndValidateConfig = async function(options) {
       resolve([config])
     } else {
       console.log("EVENTCHAIN", "Searching for config file")
-      glob(process.cwd() +  "/*.@(js|json)", async function(er, files) {
+      glob(process.cwd() +  "/*.@(js|json)", async function(err, files) {
         if (err) reject(err);
         let configs = files.map(function(f) {
           return require(f)
@@ -96,15 +96,15 @@ const start = async function(options) {
         log.pipe(process.stdout)
       } else {
         if (!fs.existsSync(chaindir)) {
-          fs.mkdirSync(chaindir)
+          fs.mkdirSync(chaindir, { recursive: true })
         }
         const logfile = fs.createWriteStream(chaindir + "/chain.txt", { flags: 'a+' })
         log.pipe(logfile)
       }
       log.push("ONSTART " + Date.now() + " " + JSON.stringify(e) + "\n")
     },
-  })
-  if (options && options.tape) gene.tape = o.tape;
+  };
+  if (options && options.tape) gene.tape = options.tape;
   if (gene.tape) {
     chaindir = path.resolve(process.cwd(), gene.tape, "eventchain")
   } else {
