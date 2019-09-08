@@ -8,8 +8,14 @@ const minimist = require('minimist')
 const requireStr = require('require-from-string');
 
 // Implement log stream - must define _read() callback or errs
-const log = new stream.Readable()
-log._read = function() {}
+var chaindir;
+const log = {
+  push: (msg) => {
+    fs.appendFile(chaindir + "/chain.txt", msg, (err) => {
+      console.log("error", err);
+    })
+  }
+}
 
 const validate = function(config, vmode) {
   let errors = [];
@@ -87,7 +93,6 @@ const loadAndValidateConfig = async function(options) {
 
 const start = async function(options) {
   const config = await loadAndValidateConfig(options)
-  let chaindir;
   let gene = {
     filter: config,
     onmempool: async function(e) {
@@ -105,8 +110,6 @@ const start = async function(options) {
         if (!fs.existsSync(chaindir)) {
           fs.mkdirSync(chaindir, { recursive: true })
         }
-        const logfile = fs.createWriteStream(chaindir + "/chain.txt", { flags: 'a+' })
-        log.pipe(logfile)
       }
       log.push("ONSTART " + Date.now() + " " + JSON.stringify(e) + "\n")
     },
