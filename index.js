@@ -49,9 +49,9 @@ const loadAndValidateConfig = async function(options) {
         config = JSON.parse(options.strconfig)
       }
       resolve([config])
-    } else if (options.config) {
-      console.log("EVENTCHAIN", "Loading config:", options.config)
-      let config = require(path.resolve(options.config))
+    } else if (options.fileconfig) {
+      console.log("EVENTCHAIN", "Loading config:", options.fileconfig)
+      let config = require(path.resolve(options.fileconfig))
       resolve([config])
     } else {
       console.log("EVENTCHAIN", "Searching for config file")
